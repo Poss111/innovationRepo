@@ -1,4 +1,5 @@
 import math
+import os
 
 from matplotlib import cm
 from matplotlib import gridspec
@@ -14,6 +15,7 @@ pd.options.display.max_rows = 10
 pd.options.display.float_format = '{:.1f}'.format
 
 sampleLoanData = pd.read_csv("C:\PersonalProject\innovationRepo\LoanData.csv", sep=",")
+directory = os.path.dirname(__file__)
 
 def preprocessData(sampleLoanData):
     selected_features = sampleLoanData[
@@ -25,35 +27,22 @@ def preprocessData(sampleLoanData):
 
 feature = preprocessData(sampleLoanData).groupby('loan_id')
 
-for key, item in feature:
-
-    print(feature.get_group(key), "\n\n")
-    print(key)
-
-def buildGraph():
+def buildGraph(key):
     plt.figure(figsize=(13, 8))
-
     ax = plt.subplot(1, 2, 1)
-    ax.set_title("Validation Data")
+    ax.set_title(("Loan : ", str(key)))
+    plt.plot(feature.get_group(key)["activity_period"], feature.get_group(key)["unpaid_principal_balance"])
+    filepath : str = 'graphs/' + str(key) + '/'
+    filename : str = str(key) + 'DataGraph.png'
+    folderPath = os.path.join(directory, filepath)
 
-    ax.set_autoscaley_on(False)
-    ax.set_ylim([32, 43])
-    ax.set_autoscalex_on(False)
-    ax.set_xlim([-126, -112])
-    plt.scatter(feature.get_group[1000000]["unpaid_principal_balance"],
-                feature.get_group[1000000]["activity_period"],
-                cmap="coolwarm",
-                c=feature.get_group[1000000]["activity_period"] / feature.get_group[1000000]["activity_period"].max())
+    if not os.path.isdir(folderPath):
+        os.makedirs(folderPath)
 
-    # ax = plt.subplot(1,2,2)
-    # ax.set_title("Training Data")
-    #
-    # ax.set_autoscaley_on(False)
-    # ax.set_ylim([32, 43])
-    # ax.set_autoscalex_on(False)
-    # ax.set_xlim([-126, -112])
-    # plt.scatter(training_examples["longitude"],
-    #             training_examples["latitude"],
-    #             cmap="coolwarm",
-    #             c=training_targets["median_house_value"] / training_targets["median_house_value"].max())
-    _ = plt.plot()
+    plt.savefig(folderPath + filename)
+
+def buildGraphs(feature):
+    for key, item in feature:
+        print(feature.get_group(key), "\n\n")
+        print(key)
+        buildGraph(key)
