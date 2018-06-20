@@ -2,13 +2,11 @@ import math
 import os
 
 from matplotlib import cm
-from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-# from sklearn.metrics import mean_squared_error
-import dateutil
+import sklearn.metrics
 from tensorflow.python.data import Dataset
 
 tf.logging.set_verbosity(tf.logging.ERROR)
@@ -17,7 +15,7 @@ pd.options.display.float_format = '{:.1f}'.format
 
 sampleLoanData = pd.read_csv("C:\PersonalProject\innovationRepo\LoanData.csv", sep=",")
 directory = os.path.dirname(__file__)
-sampleLoanDataForMachineLearning = pd.read_csv((directory + "/SampleLoanData-PercentageOfChangeAndLikelinessToDelin.csv"), sep=",")
+sampleLoanDataForMachineLearning = pd.read_csv(("C:\\PersonalProject\\innovationRepo\\" + "/SampleLoanData-PercentageOfChangeAndLikelinessToDelin.csv"), sep=",")
 
 def preprocessData(sampleLoanDataForMachineLearning):
     selected_features = sampleLoanDataForMachineLearning[
@@ -152,11 +150,11 @@ def train_model(learning_rate, steps, batch_size, input_feature):
         predictions = np.array([item['predictions'][0] for item in predictions])
 
         # Compute loss.
-        # root_mean_squared_error = math.sqrt(mean_squared_error(predictions, targets))
+        root_mean_squared_error = math.sqrt(sklearn.metrics.mean_squared_error(predictions, targets))
         # Occasionally print the current loss.
-        # print("  period %02d : %0.2f" % (period, root_mean_squared_error))
+        print("  period %02d : %0.2f" % (period, root_mean_squared_error))
         # Add the loss metrics from this period to our list.
-        # root_mean_squared_errors.append(root_mean_squared_error)
+        root_mean_squared_errors.append(root_mean_squared_error)
         # Finally, track the weights and biases over time.
         # Apply some math to ensure that the data and line are plotted neatly.
         y_extents = np.array([0, sample[my_label].max()])
@@ -170,6 +168,14 @@ def train_model(learning_rate, steps, batch_size, input_feature):
                                sample[my_feature].min())
         y_extents = weight * x_extents + bias
         plt.plot(x_extents, y_extents, color=colors[period])
+        filepath : str = 'graphs/'
+        filename : str = 'Model.png'
+        folder_path = os.path.join(directory, filepath)
+
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
+
+        plt.savefig(folder_path + filename)
     print("Model training finished.")
 
     # Output a graph of loss metrics over periods.
@@ -178,14 +184,22 @@ def train_model(learning_rate, steps, batch_size, input_feature):
     plt.xlabel('Periods')
     plt.title("Root Mean Squared Error vs. Periods")
     plt.tight_layout()
-    # plt.plot(root_mean_squared_errors)
+    plt.plot(root_mean_squared_errors)
+    filepath : str = 'graphs/'
+    filename : str = 'RSME.png'
+    folder_path = os.path.join(directory, filepath)
+
+    if not os.path.isdir(folder_path):
+        os.makedirs(folder_path)
+
+    plt.savefig(folder_path + filename)
 
     # Create a table with calibration data.
     calibration_data = pd.DataFrame()
     calibration_data["predictions"] = pd.Series(predictions)
     calibration_data["targets"] = pd.Series(targets)
 
-    # print("Final RMSE (on training data): %0.2f" % root_mean_squared_error)
+    print("Final RMSE (on training data): %0.2f" % root_mean_squared_error)
 
     return calibration_data
 
