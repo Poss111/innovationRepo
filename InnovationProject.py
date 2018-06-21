@@ -29,14 +29,6 @@ def preprocessData(sampleLoanDataForMachineLearning):
 feature = preprocessData(sampleLoanDataForMachineLearning)
 feature.describe()
 target = sampleLoanDataForMachineLearning["likeliness_to_go_into_deliquency"]
-print(feature)
-# for key, item in feature.items():
-#     print(key, " ", item)
-#     for x, y in feature.get_group(key)["unpaid_principal_balance"].items():
-#         print(x, " ",  y)
-#         value = feature.get_group(1000000).loc[(x-20) if x > 0 else 0]["unpaid_principal_balance"] - y
-#         print(value, " %", (value/feature.get_group(1000000).loc[0]["unpaid_principal_balance"]))
-
 
 def build_graph_for_percent_over_delinquency(feature):
     plt.figure(figsize=(13, 8))
@@ -47,14 +39,14 @@ def build_graph_for_percent_over_delinquency(feature):
     plt.scatter(feature["percentage_of_change"], feature["likeliness_to_go_into_deliquency"])
 
 
-
-def build_graph(key):
+def build_graph(key,data):
     plt.figure(figsize=(13, 8))
     ax = plt.subplot(1, 1, 1)
     ax.set_title("Loan ID " + str(key))
     plt.xlabel("Activity Period")
     plt.ylabel("Unpaid Principle Balance")
-    plt.plot(feature.get_group(key)["activity_period"], feature.get_group(key)["unpaid_principal_balance"])
+    ax.set_ylim(data["current_unpaid_principal_balance"].min().min(), data["current_unpaid_principal_balance"].max().max())
+    plt.plot(data.get_group(key)["activity_period"], data.get_group(key)["current_unpaid_principal_balance"])
     filepath : str = 'graphs/' + str(key) + '/'
     filename : str = str(key) + 'DataGraph.png'
     folder_path = os.path.join(directory, filepath)
@@ -69,19 +61,19 @@ def build_graphs(feature):
     for key, item in feature:
         print(feature.get_group(key), "\n\n")
         print(key)
-        build_graph(key)
+        build_graph(key,feature)
 
 
 def my_input_fn(features, targets, batch_size=1, shuffle=True, num_epochs=None):
-    features = {key:np.array(value) for key,value in dict(features).items()}
+    features = {key:np.array(value) for key, value in dict(features).items()}
 
-    ds = Dataset.from_tensor_slices((features,targets))
+    ds = Dataset.from_tensor_slices((features, targets))
     ds = ds.batch(batch_size).repeat(num_epochs)
 
     if shuffle:
         ds = ds.shuffle(10000)
 
-    features, labels = ds.make_one_shot_iterator().get_next();
+    features, labels = ds.make_one_shot_iterator().get_next()
     return features, labels
 
 
@@ -93,7 +85,7 @@ def train_model(learning_rate, steps, batch_size, input_feature):
       steps: A non-zero `int`, the total number of training steps. A training step
         consists of a forward and backward pass using a single batch.
       batch_size: A non-zero `int`, the batch size.
-      input_feature: A `string` specifying a column from `california_housing_dataframe`
+      input_feature: A `string` specifying a column from `sampleLoanDataForMachineLearning`
         to use as input feature.
 
     Returns:
@@ -204,8 +196,12 @@ def train_model(learning_rate, steps, batch_size, input_feature):
     return calibration_data
 
 
-train_model(
+build_graphs(sampleLoanData.groupby("loan_id"))
+
+calibration_data = train_model(
     learning_rate=0.05,
     steps=500,
     batch_size=5,
     input_feature="percentage_of_change")
+
+print(calibration_data["predictions"])
