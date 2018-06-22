@@ -93,7 +93,7 @@ def train_model(learning_rate, steps, batch_size, input_feature):
       after training the model.
     """
 
-    periods = 10
+    periods = 40
     steps_per_period = steps / periods
 
     my_feature = input_feature
@@ -122,7 +122,7 @@ def train_model(learning_rate, steps, batch_size, input_feature):
     plt.title("Learned Line by Period")
     plt.ylabel(my_label)
     plt.xlabel(my_feature)
-    sample = sampleLoanDataForMachineLearning.sample(n=20)
+    sample = sampleLoanDataForMachineLearning.sample(n=40)
     plt.scatter(sample[my_feature], sample[my_label])
     colors = [cm.coolwarm(x) for x in np.linspace(-1, 1, periods)]
 
@@ -178,7 +178,7 @@ def train_model(learning_rate, steps, batch_size, input_feature):
     plt.tight_layout()
     plt.plot(root_mean_squared_errors)
     filepath : str = 'graphs/'
-    filename : str = 'RSME.png'
+    filename : str = str(learning_rate) + '_' + str(period) + '_' + str(batch_size) + '_' + str(steps) + 'RSME.png'
     folder_path = os.path.join(directory, filepath)
 
     if not os.path.isdir(folder_path):
@@ -196,12 +196,13 @@ def train_model(learning_rate, steps, batch_size, input_feature):
     return calibration_data
 
 
-build_graphs(sampleLoanData.groupby("loan_id"))
+# build_graphs(sampleLoanData.groupby("loan_id"))
 
 calibration_data = train_model(
-    learning_rate=0.05,
-    steps=500,
-    batch_size=5,
+    learning_rate=0.021275,
+    steps=1000,
+    batch_size=40,
     input_feature="percentage_of_change")
+
 
 print(calibration_data["predictions"])
